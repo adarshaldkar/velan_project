@@ -26,6 +26,7 @@ bool faultSent = false;
 
 // ================= Relays (Active LOW) =================
 int phase[3] = {25, 26, 27}; // R, Y, B
+const int ADC_PIN = 34;      // Brown wire from the switch matrix
 
 // ================= Limits =================
 float OVER_HEAT_TEMP = 40.0;
@@ -123,7 +124,8 @@ void setup() {
   Serial.println("==========================================");
 
   // Relay pins
-  Serial.println(">>> [SETUP] Initializing relay pins...");
+  Serial.println(">>> [SETUP] Initializing relay pins and ADC...");
+  pinMode(ADC_PIN, INPUT);
   for (int i = 0; i < 3; i++) {
     pinMode(phase[i], OUTPUT);
     digitalWrite(phase[i], HIGH); // OFF (active LOW)
@@ -236,7 +238,8 @@ void loop() {
   digitalWrite(phase[0], LOW);
   delay(200);
 
-  if (random(0, 10) > 6) { dist1 = random(50, 480); } else { dist1 = 0; } // Replace with real ADC calc
+  int adcR = analogRead(ADC_PIN);
+  if (adcR < 4000) { dist1 = map(adcR, 0, 4000, 50, 480); } else { dist1 = 0; }
   Serial.println(">>> [PHASE] R Phase distance reading: " + String(dist1));
   if (dist1 > 0) {
     faultDetected = true;
@@ -257,7 +260,8 @@ void loop() {
   digitalWrite(phase[1], LOW);
   delay(200);
 
-  if (random(0, 10) > 6) { dist2 = random(50, 480); } else { dist2 = 0; }
+  int adcY = analogRead(ADC_PIN);
+  if (adcY < 4000) { dist2 = map(adcY, 0, 4000, 50, 480); } else { dist2 = 0; }
   Serial.println(">>> [PHASE] Y Phase distance reading: " + String(dist2));
   if (dist2 > 0 && !faultDetected) {
     faultDetected = true;
@@ -278,7 +282,8 @@ void loop() {
   digitalWrite(phase[2], LOW);
   delay(200);
 
-  if (random(0, 10) > 6) { dist3 = random(50, 480); } else { dist3 = 0; }
+  int adcB = analogRead(ADC_PIN);
+  if (adcB < 4000) { dist3 = map(adcB, 0, 4000, 50, 480); } else { dist3 = 0; }
   Serial.println(">>> [PHASE] B Phase distance reading: " + String(dist3));
   if (dist3 > 0 && !faultDetected) {
     faultDetected = true;
@@ -293,11 +298,21 @@ void loop() {
   delay(500);
 
   // ---------- Summary ----------
+  lcd.clear();
   if (faultDetected) {
     Serial.println(">>> [STATUS] *** FAULT DETECTED: " + faultMsg + " ***");
+    lcd.setCursor(0, 0);
+    lcd.print(faultPhase + "-Fault @ " + String(currentFaultDistance, 0) + "m");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp: " + String(tempC, 1) + " C");
   } else {
     Serial.println(">>> [STATUS] All phases NORMAL. No fault detected.");
+    lcd.setCursor(0, 0);
+    lcd.print("System Normal");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp: " + String(tempC, 1) + " C");
   }
+  delay(1500); // Hold the message on screen so it can be read
 
   // ---------- SMS Logic ----------
   if (faultDetected && !faultSent) {
