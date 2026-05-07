@@ -7,9 +7,9 @@
 #include <HardwareSerial.h>
 
 // ================= Network Credentials =================
-const char* ssid = "vivo T4x 5G";             // Hotspot SSID
-const char* password = "33333333";            // Hotspot Password
-String serverName = "http://10.195.239.145:5005/api/fault"; // Laptop IP on vivo T4x 5G hotspot
+const char* ssid = "ANKITA HALDKAR ";         // Added the trailing space that your router requires!
+const char* password = "4132957234";          // <--- TYPE YOUR WI-FI PASSWORD HERE
+String serverName = "http://192.168.1.6:5005/api/fault"; // Laptop IP on ANKITA network
 
 // ================= LCD =================
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -61,7 +61,7 @@ void sendSMS(String msg) {
 // ========================================================
 // Function: Send to Backend
 // ========================================================
-void sendDataToBackend(float distance, float temp, String status) {
+void sendDataToBackend(float distance, float temp, String status, String phase) {
   Serial.println("--------------------------------------------------");
   Serial.println(">>> [HTTP] Attempting to send data to backend...");
   Serial.println(">>> [HTTP] Target URL: " + serverName);
@@ -75,7 +75,8 @@ void sendDataToBackend(float distance, float temp, String status) {
 
     String jsonPayload = "{\"distance\": " + String(distance) +
                          ", \"temperature\": " + String(temp, 2) +
-                         ", \"status\": \"" + status + "\"}";
+                         ", \"status\": \"" + status + "\"" +
+                         ", \"phase\": \"" + phase + "\"}";
 
     Serial.println(">>> [HTTP] Payload: " + jsonPayload);
 
@@ -216,7 +217,7 @@ void loop() {
 
     if (millis() - lastPostTime >= postInterval) {
       Serial.println(">>> [TEMP] Sending WARNING to backend...");
-      sendDataToBackend(0, tempC, "WARNING");
+      sendDataToBackend(0, tempC, "WARNING", "ALL");
       lastPostTime = millis();
     }
     return;
@@ -225,6 +226,7 @@ void loop() {
   // ---------- Fault logic ----------
   bool faultDetected = false;
   String faultMsg = "";
+  String faultPhase = "NONE";
   float currentFaultDistance = 0;
 
   // ===== R PHASE =====
@@ -234,12 +236,13 @@ void loop() {
   digitalWrite(phase[0], LOW);
   delay(200);
 
-  dist1 = random(0, 2); // Replace with real ADC calc
+  if (random(0, 10) > 6) { dist1 = random(50, 480); } else { dist1 = 0; } // Replace with real ADC calc
   Serial.println(">>> [PHASE] R Phase distance reading: " + String(dist1));
   if (dist1 > 0) {
     faultDetected = true;
     currentFaultDistance = dist1;
-    faultMsg = "R phase fault at " + String(dist1) + " KM";
+    faultPhase = "R";
+    faultMsg = "R phase fault at " + String(dist1) + " M";
     Serial.println(">>> [PHASE] ⚡ FAULT detected on R Phase!");
   } else {
     Serial.println(">>> [PHASE] R Phase OK.");
@@ -254,12 +257,13 @@ void loop() {
   digitalWrite(phase[1], LOW);
   delay(200);
 
-  dist2 = random(0, 2);
+  if (random(0, 10) > 6) { dist2 = random(50, 480); } else { dist2 = 0; }
   Serial.println(">>> [PHASE] Y Phase distance reading: " + String(dist2));
   if (dist2 > 0 && !faultDetected) {
     faultDetected = true;
     currentFaultDistance = dist2;
-    faultMsg = "Y phase fault at " + String(dist2) + " KM";
+    faultPhase = "Y";
+    faultMsg = "Y phase fault at " + String(dist2) + " M";
     Serial.println(">>> [PHASE] ⚡ FAULT detected on Y Phase!");
   } else {
     Serial.println(">>> [PHASE] Y Phase OK (or R already faulted).");
@@ -274,12 +278,13 @@ void loop() {
   digitalWrite(phase[2], LOW);
   delay(200);
 
-  dist3 = random(0, 2);
+  if (random(0, 10) > 6) { dist3 = random(50, 480); } else { dist3 = 0; }
   Serial.println(">>> [PHASE] B Phase distance reading: " + String(dist3));
   if (dist3 > 0 && !faultDetected) {
     faultDetected = true;
     currentFaultDistance = dist3;
-    faultMsg = "B phase fault at " + String(dist3) + " KM";
+    faultPhase = "B";
+    faultMsg = "B phase fault at " + String(dist3) + " M";
     Serial.println(">>> [PHASE] ⚡ FAULT detected on B Phase!");
   } else {
     Serial.println(">>> [PHASE] B Phase OK (or earlier phase already faulted).");
@@ -320,9 +325,9 @@ void loop() {
 
   if (now - lastPostTime >= postInterval) {
     if (faultDetected) {
-      sendDataToBackend(currentFaultDistance, tempC, "FAULT");
+      sendDataToBackend(currentFaultDistance, tempC, "FAULT", faultPhase);
     } else {
-      sendDataToBackend(0, tempC, "NORMAL");
+      sendDataToBackend(0, tempC, "NORMAL", "NONE");
     }
     lastPostTime = millis();
   }

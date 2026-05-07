@@ -19,3 +19,5 @@ Thumbs.db
 
 # Test scripts
 test_script.js
+
+mongodb_data/

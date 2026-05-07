@@ -5,11 +5,11 @@ const Fault = require('../models/Fault');
 // POST /api/fault — save a new fault record
 router.post('/fault', async (req, res) => {
   try {
-    const { distance, temperature, status } = req.body;
+    const { distance, temperature, status, phase } = req.body;
     if (distance === undefined || temperature === undefined || !status) {
       return res.status(400).json({ error: 'distance, temperature, and status are required' });
     }
-    const fault = new Fault({ distance, temperature, status });
+    const fault = new Fault({ distance, temperature, status, phase });
     await fault.save();
     return res.status(201).json({ message: 'Fault record saved', fault });
   } catch (err) {

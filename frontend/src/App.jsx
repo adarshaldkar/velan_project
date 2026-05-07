@@ -4,52 +4,64 @@ import LiveStatusPanel from './components/LiveStatusPanel';
 import MapView from './components/MapView';
 import FaultHistoryTable from './components/FaultHistoryTable';
 import TemperatureChart from './components/TemperatureChart';
+import PhaseStatusTable from './components/PhaseStatusTable';
 
 function Header() {
   return (
-    <header className="flex items-center justify-between px-6 py-4"
-            style={{ background: '#0B1120', borderBottom: '1px solid #1E293B' }}>
-      <div className="flex items-center gap-3">
-        {/* Logo */}
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center"
-             style={{ background: 'linear-gradient(135deg, #EF4444, #B91C1C)' }}>
+    <header className="sticky top-0 z-50 glass px-8 py-3 flex items-center justify-between border-b border-slate-800">
+      <div className="flex items-center gap-4">
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-red-600/20 border border-red-500/30">
           <span className="text-xl">⚡</span>
         </div>
         <div>
-          <h1 className="text-base font-black tracking-wide" style={{ color: '#F1F5F9' }}>
-            Cable Fault Monitoring System
+          <h1 className="text-lg font-black tracking-tight text-white uppercase">
+            Grid Monitor <span className="text-red-500 font-mono text-[10px] ml-2 px-1.5 py-0.5 bg-red-500/10 rounded border border-red-500/20">NODE_204</span>
           </h1>
-          <p className="text-xs" style={{ color: '#475569' }}>
-            Underground GSM &amp; IoT Fault Detection · Chennai Grid
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            Underground Cable Fault Detection System
           </p>
         </div>
       </div>
 
-      {/* Right section */}
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <p className="text-xs font-semibold" style={{ color: '#22C55E' }}>SYSTEM ONLINE</p>
-          <p className="text-xs" style={{ color: '#475569' }}>
-            {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </p>
+      <div className="flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-6 border-r border-slate-800 pr-8">
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black text-slate-500 uppercase">Uptime</span>
+            <span className="text-xs font-mono text-slate-300 tracking-tighter">99.98%</span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black text-slate-500 uppercase">Latency</span>
+            <span className="text-xs font-mono text-slate-300 tracking-tighter">14ms</span>
+          </div>
         </div>
-        <div className="h-3 w-3 rounded-full"
-             style={{ background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Connected</span>
+            </div>
+            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
       </div>
     </header>
   );
 }
 
-function StatCard({ label, value, unit, color, icon }) {
+function StatCard({ label, value, unit, color, icon, glowColor }) {
   return (
-    <div className="rounded-xl px-5 py-4 flex items-center gap-4"
-         style={{ background: '#1E293B', border: '1px solid #334155' }}>
-      <span className="text-2xl">{icon}</span>
-      <div>
-        <p className="text-xs" style={{ color: '#64748B' }}>{label}</p>
-        <p className="text-xl font-black" style={{ color, fontFamily: 'JetBrains Mono, monospace' }}>
-          {value}<span className="text-sm font-normal ml-1" style={{ color: '#64748B' }}>{unit}</span>
-        </p>
+    <div className="glass rounded-xl p-4 border border-slate-800 hover:border-slate-700 transition-all duration-300">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">{label}</span>
+        <span className="text-lg opacity-30">{icon}</span>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl font-black tabular-nums tracking-tighter" style={{ color }}>
+          {value}
+        </span>
+        <span className="text-[10px] font-bold text-slate-600 uppercase">{unit}</span>
       </div>
     </div>
   );
@@ -79,75 +91,72 @@ export default function App() {
       )}
 
       {!loading && (
-        <main className="max-w-screen-xl mx-auto px-4 py-6 flex flex-col gap-6">
+        <main className="max-w-[1920px] mx-auto p-6 flex flex-col gap-6">
 
-          {/* ── Top summary stats ──────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon="📡" label="System Status"
-              value={latestFault?.status ?? 'IDLE'} unit=""
-              color={isFault ? '#EF4444' : '#22C55E'}
-            />
-            <StatCard
-              icon="📏" label="Last Fault Distance"
-              value={latestFault?.distance ?? '—'} unit="m"
-              color="#F59E0B"
-            />
-            <StatCard
-              icon="🌡️" label="Last Temperature"
-              value={latestFault?.temperature ?? '—'} unit="°C"
-              color={latestFault?.temperature > 70 ? '#EF4444' : '#22C55E'}
-            />
-            <StatCard
-              icon="⚡" label="Total Faults"
-              value={faultCount} unit="events"
-              color="#EF4444"
-            />
-          </div>
+          {/* ── Dashboard Top Row ────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            {/* Stats Row (Span 12) */}
+            <div className="xl:col-span-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                icon="📡" label="Node Status"
+                value={latestFault?.status ?? 'IDLE'} unit=""
+                color={isFault ? '#EF4444' : '#22C55E'}
+              />
+              <StatCard
+                icon="📏" label="Fault Distance"
+                value={latestFault?.distance ?? '—'} unit="m"
+                color="#F59E0B"
+              />
+              <StatCard
+                icon="🌡️" label="Core Temp"
+                value={latestFault?.temperature ?? '—'} unit="°C"
+                color={latestFault?.temperature > 70 ? '#EF4444' : '#22C55E'}
+              />
+              <StatCard
+                icon="⚡" label="Alert Count"
+                value={faultCount} unit="events"
+                color="#EF4444"
+              />
+            </div>
 
-          {/* ── Alert + Status Row ─────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-            <div className="lg:col-span-3">
+            {/* Main Content Area (Left) */}
+            <div className="xl:col-span-8 flex flex-col gap-6">
               <FaultAlertCard fault={latestFault} />
+              <MapView fault={latestFault} />
+              <TemperatureChart data={faultHistory} />
+              <FaultHistoryTable data={faultHistory} />
             </div>
-            <div className="lg:col-span-2">
+
+            {/* Sidebar Area (Right) */}
+            <div className="xl:col-span-4 flex flex-col gap-6">
               <LiveStatusPanel fault={latestFault} />
-            </div>
-          </div>
-
-          {/* ── Map ───────────────────────────────────── */}
-          <MapView fault={latestFault} />
-
-          {/* ── Temp Chart + Table ─────────────────────── */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <TemperatureChart data={faultHistory} />
-            <div className="rounded-2xl overflow-hidden" style={{ background: '#1E293B', border: '1px solid #334155' }}>
-              <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid #334155' }}>
-                <span>📊</span>
-                <p className="text-sm font-bold" style={{ color: '#E2E8F0' }}>Avg Temperature</p>
-                <span className="ml-auto text-lg font-black"
-                      style={{ color: '#F59E0B', fontFamily: 'JetBrains Mono, monospace' }}>
-                  {avgTemp}<span className="text-sm font-normal ml-1" style={{ color: '#64748B' }}>°C</span>
-                </span>
+              <PhaseStatusTable data={faultHistory} />
+              
+              {/* Metrics Grid */}
+              <div className="glass rounded-xl overflow-hidden border border-slate-800">
+                <div className="px-5 py-3 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">System Metrics</span>
+                  <span className="text-xs font-mono text-amber-500 font-bold">{avgTemp}°C AVG</span>
+                </div>
+                <div className="p-4 grid grid-cols-2 gap-3">
+                  <MiniStat label="History" value={faultHistory.length} icon="📝" />
+                  <MiniStat label="Faults"  value={faultCount} color="#EF4444" icon="⚡" />
+                  <MiniStat label="Normal" value={faultHistory.filter(f => f.status === 'NORMAL').length} color="#22C55E" icon="🛡️" />
+                  <MiniStat label="Warning" value={faultHistory.filter(f => f.status === 'WARNING').length} color="#F59E0B" icon="⚠️" />
+                </div>
               </div>
-              <div className="px-5 py-4 grid grid-cols-2 gap-4">
-                <MiniStat label="Total Records" value={faultHistory.length} />
-                <MiniStat label="FAULT Events"  value={faultCount} color="#EF4444" />
-                <MiniStat label="NORMAL Events" value={faultHistory.filter(f => f.status === 'NORMAL').length} color="#22C55E" />
-                <MiniStat label="WARNING Events" value={faultHistory.filter(f => f.status === 'WARNING').length} color="#F59E0B" />
+
+              {/* Simulation */}
+              <div className="glass rounded-xl p-5 border border-dashed border-slate-800">
+                <p className="text-[9px] font-black uppercase tracking-widest text-blue-400 mb-3">Debug Console</p>
+                <code className="block bg-black/40 p-3 rounded text-[9px] text-slate-500 font-mono break-all border border-slate-800">
+                  POST /api/fault<br/>
+                  {`{"distance":185,"temp":78,"status":"FAULT","phase":"R"}`}
+                </code>
               </div>
             </div>
-          </div>
 
-          {/* ── Full history table ─────────────────────── */}
-          <FaultHistoryTable data={faultHistory} />
-
-          {/* ── Simulation hint ────────────────────────── */}
-          <div className="rounded-xl px-5 py-4" style={{ background: '#1E293B', border: '1px dashed #334155' }}>
-            <p className="text-xs font-bold mb-2" style={{ color: '#38BDF8' }}>🧪 Simulate a Fault via Postman or curl:</p>
-            <code className="text-xs" style={{ color: '#94A3B8', fontFamily: 'JetBrains Mono, monospace' }}>
-              POST http://localhost:5000/api/fault · Body: {'{"distance":185,"temperature":78,"status":"FAULT"}'}
-            </code>
           </div>
         </main>
       )}
@@ -155,11 +164,14 @@ export default function App() {
   );
 }
 
-function MiniStat({ label, value, color = '#E2E8F0' }) {
+function MiniStat({ label, value, color = '#E2E8F0', icon }) {
   return (
-    <div className="rounded-lg px-3 py-3" style={{ background: '#0F172A' }}>
-      <p className="text-xs mb-1" style={{ color: '#64748B' }}>{label}</p>
-      <p className="text-xl font-black" style={{ color, fontFamily: 'JetBrains Mono, monospace' }}>{value}</p>
+    <div className="glass-dark rounded-2xl p-4 border border-white/5 flex flex-col gap-1 transition-transform hover:scale-105">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+        <span className="text-xs opacity-50">{icon}</span>
+      </div>
+      <p className="text-2xl font-black tabular-nums tracking-tighter" style={{ color }}>{value}</p>
     </div>
   );
 }
